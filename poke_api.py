@@ -1,11 +1,14 @@
 import requests
 import json
+import image_lib
+import os
 
 POKE_API_URL = r'https://pokeapi.co/api/v2/pokemon/'
 
 def main():
     get_pokemon_info('giratina-origin')
     fetch_all_names()
+    get_poke_image('giratina-origin')
     return
 
 
@@ -45,12 +48,44 @@ def fetch_all_names():
     """Gets a list of all pokemon names
     
     """
-    for i in range(1, 1009):
-        url_to_use = POKE_API_URL + str(i)
-        poke_info = (requests.get(url_to_use))
-        print(poke_info.text)
+    poke_list = []
+    response = requests.get(r'https://pokeapi.co/api/v2/pokemon?limit=100000&offset=0')
+    resp_dict = json.loads(response.text)
+    pokemon_names = [p["name"] for p in resp_dict['results']]
+    #could also use comp like in lecture - pokemon_names = [p["name"] for p in resp_dict['results']]
+    return(pokemon_names)
 
-        
+def get_poke_image(poke_name):
+    
+    url_to_use = POKE_API_URL + poke_name
+    
+    response = (requests.get(url_to_use))
+    
+    if response is None:
+        return
+
+    resp_dict = json.loads(response.text)
+    
+    img_url = resp_dict['sprites']['other']['official-artwork']['front_default']
+    
+    image_data = image_lib.download_image(img_url)
+
+    if image_data is None:
+        return
+    
+    dir_path = os.path.dirname(os.path.realpath('poke_api.py'))
+    
+    new_dir_path = dir_path + '\poke_images'
+    
+    if not os.path.exists(new_dir_path):
+        os.makedirs(new_dir_path)
+    
+    poke_img_path = f'\{poke_name}.jpg'
+
+    image_lib.save_image_file(image_data, new_dir_path + poke_img_path)
+
+    return new_dir_path + poke_img_path
+    
 
 if __name__ == '__main__':
     main()
